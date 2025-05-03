@@ -5,8 +5,6 @@
 #define MAX_LEVEL 16
 #define NUM_SEARCHES 1000000
 
-
-
 typedef struct SLNode {
     int key;
     struct SLNode **forward;
@@ -65,13 +63,11 @@ int sl_search(SkipList* sl, int key, int* steps) {
             x = x->forward[i];
             (*steps)++;
         }
-        (*steps)++; 
+        (*steps)++;
     }
     x = x->forward[0];
     return (x && x->key == key);
 }
-
-
 
 typedef struct BSTNode {
     int key;
@@ -104,15 +100,15 @@ int bst_search(BSTNode* root, int key, int* steps) {
     return 0;
 }
 
-
-
-void benchmark(size_t n) {
-    printf("== n = %zu ==\n", n);
-
+void benchmark(size_t n, FILE* jsonFile, int is_last) {
     SkipList* sl = sl_create();
     BSTNode* bst_root = NULL;
 
     int* keys = malloc(n * sizeof(int));
+    if (!keys) {
+        fprintf(stderr, "{\"error\":\"Memory allocation failed\"}\n");
+        return;
+    }
     for (size_t i = 0; i < n; ++i) keys[i] = rand();
 
     for (size_t i = 0; i < n; ++i) {
@@ -124,31 +120,40 @@ void benchmark(size_t n) {
     for (size_t i = 0; i < NUM_SEARCHES; ++i) {
         int target;
         if (rand() % 2 == 0)
-            target = keys[rand() % n];  
+            target = keys[rand() % n];
         else
-            target = rand();            
+            target = rand();
 
         int steps;
         sl_search(sl, target, &steps);
         sl_total_steps += steps;
-
         bst_search(bst_root, target, &steps);
         bst_total_steps += steps;
     }
 
-    printf("Skip List:    Avg steps: %.2f\n", (double)sl_total_steps / NUM_SEARCHES);
-    printf("Randomized BST: Avg steps: %.2f\n", (double)bst_total_steps / NUM_SEARCHES);
+    double avg_sl = (double)sl_total_steps / NUM_SEARCHES;
+    double avg_bst = (double)bst_total_steps / NUM_SEARCHES;
+
+    fprintf(jsonFile, "  {\"n\":%zu, \"skiplist\":%.2f, \"bst\":%.2f}%s\n", n, avg_sl, avg_bst, is_last ? "" : ",");
 
     free(keys);
 }
 
-
-
 int main() {
     srand(time(NULL));
     size_t sizes[] = {5000000, 10000000, 20000000, 50000000};
-    for (int i = 0; i < 4; ++i) {
-        benchmark(sizes[i]);
+    int len = 4;
+
+    FILE* jsonFile = fopen("result-2.json", "w");
+    if (!jsonFile) {
+        fprintf(stderr, "{\"error\":\"Cannot open result.json\"}\n");
+        return 1;
     }
+    fprintf(jsonFile, "[\n");
+    for (int i = 0; i < len; ++i) {
+        benchmark(sizes[i], jsonFile, i == len-1);
+    }
+    fprintf(jsonFile, "]\n");
+    fclose(jsonFile);
     return 0;
 }

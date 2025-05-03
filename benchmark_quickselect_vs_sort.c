@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-
 int quickselect(int arr[], size_t n, size_t k) {
     if (n == 1) return arr[0];
     int pivot = arr[rand() % n];
@@ -31,28 +30,25 @@ int quickselect(int arr[], size_t n, size_t k) {
     return result;
 }
 
-
 int cmpfunc(const void *a, const void *b) {
     return (*(int*)a - *(int*)b);
 }
 
-
-void benchmark(size_t n) {
+void benchmark(size_t n, FILE* jsonFile) {
     int *data = malloc(n * sizeof(int));
     if (!data) {
-        printf("Memory allocation failed for size %zu\n", n);
+        fprintf(stderr, "{\"error\":\"Memory allocation failed for size %zu\"}\n", n);
         return;
     }
-
     for (size_t i = 0; i < n; ++i) data[i] = rand() % 1000000;
-
     
     double total_qs_time = 0;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 100; ++i) {  // Use 100 for speed
         int *sample = malloc(n * sizeof(int));
         if (!sample) {
-            printf("Memory allocation failed during QuickSelect sample\n");
-            break;
+            fprintf(stderr, "{\"error\":\"Memory allocation failed during QuickSelect sample\"}\n");
+            free(data);
+            return;
         }
         for (size_t j = 0; j < n; ++j) sample[j] = data[j];
         size_t k = rand() % n;
@@ -64,23 +60,21 @@ void benchmark(size_t n) {
 
         free(sample);
     }
+    double qs_avg = total_qs_time / 100;
 
-    
-    printf("n=%zu | QuickSelect avg: %.6f s", n, total_qs_time / 1000);
-
-    
     int *sort_sample = malloc(n * sizeof(int));
     if (!sort_sample) {
-        printf("Memory allocation failed during sort\n");
+        fprintf(stderr, "{\"error\":\"Memory allocation failed during sort\"}\n");
         free(data);
         return;
     }
-
     for (size_t i = 0; i < n; ++i) sort_sample[i] = data[i];
     clock_t start = clock();
     qsort(sort_sample, n, sizeof(int), cmpfunc);
     clock_t end = clock();
-    printf(" | QuickSort: %.6f s\n", (double)(end - start) / CLOCKS_PER_SEC);
+    double sort_time = (double)(end - start) / CLOCKS_PER_SEC;
+
+    fprintf(jsonFile, "{\"n\":%zu, \"quickselect\":%.6f, \"quicksort\":%.6f}\n", n, qs_avg, sort_time);
 
     free(data);
     free(sort_sample);
@@ -90,9 +84,17 @@ int main() {
     srand(time(NULL));
     size_t ns[] = {1000000, 2000000, 4000000, 8000000, 16000000};  
     size_t len = sizeof(ns) / sizeof(ns[0]);
-    for (size_t i = 0; i < len; ++i) {
-        printf("n = %zu...\n", ns[i]);
-        benchmark(ns[i]);
+    FILE *jsonFile = fopen("result-1.json", "w");
+    if (!jsonFile) {
+        fprintf(stderr, "{\"error\":\"Failed to open result.json for writing\"}\n");
+        return 1;
     }
+    fprintf(jsonFile, "[\n");
+    for (size_t i = 0; i < len; ++i) {
+        benchmark(ns[i], jsonFile);
+        if (i != len-1) fprintf(jsonFile, ",\n");
+    }
+    fprintf(jsonFile, "\n]\n");
+    fclose(jsonFile);
     return 0;
 }

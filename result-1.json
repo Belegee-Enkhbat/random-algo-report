@@ -1,0 +1,12 @@
+[
+{"n":1000000, "quickselect":0.013102, "quicksort":0.104714}
+,
+{"n":2000000, "quickselect":0.027920, "quicksort":0.226755}
+,
+{"n":4000000, "quickselect":0.053140, "quicksort":0.419315}
+,
+{"n":8000000, "quickselect":0.104281, "quicksort":0.818076}
+,
+{"n":16000000, "quickselect":0.232323, "quicksort":1.633327}
+
+]

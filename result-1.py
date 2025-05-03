@@ -1,35 +1,33 @@
+import json
 import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.ticker as mtick
 
-# Мэдээлэл
-input_sizes = [1_000_000, 2_000_000, 4_000_000, 8_000_000, 16_000_000]
-quickselect_times = [0.013757, 0.027673, 0.054179, 0.105701, 0.211265]
-sort_times = [0.101036, 0.209249, 0.417751, 0.818184, 1.590076]
+with open('result-1.json', 'r') as f:
+    data = json.load(f)
 
-# График үүсгэх
+ns = [d['n'] for d in data]
+qs_time = [d['quickselect'] * 1000 for d in data]  # Convert to milliseconds
+sort_time = [d['quicksort'] * 1000 for d in data]  # Convert to milliseconds
+
 plt.figure(figsize=(10, 6))
-plt.plot(input_sizes, quickselect_times, marker='o', label='QuickSelect')
-plt.plot(input_sizes, sort_times, marker='s', label='Эрэмдэлэлт (QuickSort)')
+plt.plot(ns, sort_time, marker='o', markersize=6, color='#5296d8', label='Quicksort')
+plt.plot(ns, qs_time, marker='s', markersize=6, color='#ffa154', label='Quickselect')
 
-# Хэмжээний тэнхлэгүүд лог масштабтай болгох (заавал биш, гэхдээ ойлгомжтой болгодог)
-plt.xscale('log')
-plt.yscale('log')
+poly_sort = np.polyfit(ns, sort_time, 1)
+poly_qs = np.polyfit(ns, qs_time, 1)
+plt.plot(ns, np.polyval(poly_sort, ns), color='#5296d8', linestyle=':', label='Linear (Quicksort)')
+plt.plot(ns, np.polyval(poly_qs, ns), color='#ffa154', linestyle=':', label='Linear (Quickselect)')
 
-# Утгуудыг цэг бүр дээр бичих
-for x, y in zip(input_sizes, quickselect_times):
-    plt.text(x, y, f"{y:.3f}", ha='right', va='bottom', fontsize=8)
-for x, y in zip(input_sizes, sort_times):
-    plt.text(x, y, f"{y:.3f}", ha='left', va='bottom', fontsize=8)
+plt.xlabel('Input Size (N)')
+plt.ylabel('Time (ms)')
+plt.title('Quickselect vs Quicksort Performance')
 
-# Тайлбар, шошго, тор
-plt.xlabel('Оролтын хэмжээ (n)')
-plt.ylabel('Дундаж хугацаа (секундээр)')
-plt.title('QuickSelect ба Эрэмдэлэлтийн харьцуулалт (лог масштаб)')
+plt.gca().xaxis.set_major_formatter(mtick.FuncFormatter(lambda x, _: f'{int(x):,}'))
+
+plt.grid(True, which='both', axis='both', linestyle='--', alpha=0.5)
 plt.legend()
-plt.grid(True, which="both", linestyle='--', linewidth=0.5)
+
 plt.tight_layout()
-
-# PNG файл болгон хадгалах
-plt.savefig("benchmark_comparison.png", dpi=300)
-
-# График харуулах
+plt.savefig('quick_vs_sort_benchmark.png', dpi=300)
 plt.show()
