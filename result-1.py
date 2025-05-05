@@ -7,8 +7,8 @@ with open('result-1.json', 'r') as f:
     data = json.load(f)
 
 ns = [d['n'] for d in data]
-qs_time = [d['quickselect'] * 1000 for d in data]  # Convert to milliseconds
-sort_time = [d['quicksort'] * 1000 for d in data]  # Convert to milliseconds
+qs_time = [d['quickselect'] * 1000 for d in data]  
+sort_time = [d['quicksort'] * 1000 for d in data] 
 
 plt.figure(figsize=(10, 6))
 plt.plot(ns, sort_time, marker='o', markersize=6, color='#5296d8', label='Quicksort')
